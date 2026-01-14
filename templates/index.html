@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZYER | 撸毛项目追踪器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="brand-tags">
+                <span class="brand-tag">ZYER</span>
+                <span class="brand-tag">不擅长但能做好</span>
+                <span class="brand-tag">执行力</span>
+                <span class="brand-tag">定投</span>
+                <span class="brand-tag">WAGMI</span>
+                <span class="brand-tag">GM</span>
+                <a href="https://x.com/ZYER55" target="_blank" class="brand-tag brand-link">@ZYER55</a>
+            </div>
+            <h1>🚀 撸毛项目追踪器</h1>
+            <p class="subtitle">ZYER | 追踪空投项目，管理投资，自动生成X内容</p>
+        </header>
+
+        <!-- Stats Dashboard -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">总项目数</div>
+                <div class="stat-value" id="totalProjects">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">进行中</div>
+                <div class="stat-value" id="activeProjects">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">已申领</div>
+                <div class="stat-value" id="claimedProjects">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总投入</div>
+                <div class="stat-value" id="totalInvestment">$-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总收益</div>
+                <div class="stat-value" id="totalReward">$-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">ROI</div>
+                <div class="stat-value" id="totalROI">-%</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Column: Project List -->
+            <div class="projects-section">
+                <div class="section-header">
+                    <h2>📋 项目列表</h2>
+                    <button class="btn btn-primary" onclick="showAddModal()">+ 新增项目</button>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <select id="filterStatus" onchange="loadProjects()">
+                        <option value="">全部状态</option>
+                        <option value="tracking">进行中</option>
+                        <option value="claimed">已申领</option>
+                        <option value="ended">已结束</option>
+                    </select>
+                    <select id="filterPotential" onchange="loadProjects()">
+                        <option value="">全部潜力</option>
+                        <option value="high">高</option>
+                        <option value="medium">中</option>
+                        <option value="low">低</option>
+                    </select>
+                </div>
+
+                <!-- Projects Grid -->
+                <div id="projectsList" class="projects-grid">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Right Column: X Content Generator -->
+            <div class="content-generator-section">
+                <div class="section-header">
+                    <h2>📝 X内容生成器</h2>
+                </div>
+
+                <div class="generator-panel">
+                    <div class="generator-buttons">
+                        <button class="btn btn-primary" onclick="generateContent('daily')">
+                            📅 今日机会
+                        </button>
+                        <button class="btn btn-primary" onclick="generateContent('roi')">
+                            📊 ROI报告
+                        </button>
+                        <button class="btn btn-primary" onclick="generateContent('thread')">
+                            🧵 完整Thread
+                        </button>
+                        <button class="btn btn-outline" onclick="generateContent('gm')">
+                            ☀️ GM打卡
+                        </button>
+                        <button class="btn btn-outline" onclick="generateContent('weekly')">
+                            📆 周总结
+                        </button>
+                        <button class="btn btn-outline" onclick="generateContent('motivation')">
+                            💪 励志语录
+                        </button>
+                    </div>
+
+                    <div id="generatedContent" class="generated-content" style="display: none;">
+                        <div class="content-header">
+                            <h3>生成内容</h3>
+                            <span class="char-count" id="charCount">0 字符</span>
+                        </div>
+                        <textarea id="contentText" placeholder="生成的内容将显示在这里...你可以编辑后复制"></textarea>
+                        <div class="content-actions">
+                            <button class="btn btn-success" onclick="copyContent()">📋 复制到剪贴板</button>
+                            <button class="btn btn-outline" onclick="clearContent()">🗑️ 清空</button>
+                            <button class="btn btn-outline" onclick="openInX()">🐦 打开X发布</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="activity-log-section">
+                    <h3>📜 活动日志</h3>
+                    <div id="activityLog" class="activity-log">
+                        <!-- Logs will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新增项目</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="projectForm" onsubmit="saveProject(event)">
+                <input type="hidden" id="projectId">
+
+                <div class="form-group">
+                    <label>项目名称 *</label>
+                    <input type="text" id="projectName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="projectDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>链条</label>
+                        <select id="projectChain">
+                            <option value="">选择</option>
+                            <option value="ETH">Ethereum</option>
+                            <option value="BSC">BSC</option>
+                            <option value="SOL">Solana</option>
+                            <option value="ARB">Arbitrum</option>
+                            <option value="OP">Optimism</option>
+                            <option value="MATIC">Polygon</option>
+                            <option value="AVAX">Avalanche</option>
+                            <option value="Other">其他</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>类别</label>
+                        <select id="projectCategory">
+                            <option value="">选择</option>
+                            <option value="DeFi">DeFi</option>
+                            <option value="NFT">NFT</option>
+                            <option value="GameFi">GameFi</option>
+                            <option value="Layer2">Layer2</option>
+                            <option value="Social">Social</option>
+                            <option value="Other">其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select id="projectStatus">
+                            <option value="tracking">进行中</option>
+                            <option value="claimed">已申领</option>
+                            <option value="ended">已结束</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>潜力</label>
+                        <select id="projectPotential">
+                            <option value="">选择</option>
+                            <option value="high">高</option>
+                            <option value="medium">中</option>
+                            <option value="low">低</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>投资金额 ($)</label>
+                        <input type="number" id="projectInvestment" step="0.01" min="0" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>预期奖励 ($)</label>
+                        <input type="number" id="projectReward" step="0.01" min="0" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>实际奖励 ($)</label>
+                        <input type="number" id="projectActualReward" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>总任务数</label>
+                        <input type="number" id="projectTotalTasks" min="0" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>已完成</label>
+                        <input type="number" id="projectTasksCompleted" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>截止日期</label>
+                        <input type="datetime-local" id="projectDeadline">
+                    </div>
+
+                    <div class="form-group">
+                        <label>提醒日期</label>
+                        <input type="datetime-local" id="projectReminder">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="projectNotes" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>ZYER</h3>
+                <p>不擅长但能做好 | 执行力 | 定投 | 跑步 | 读书 | 学英语 | WAGMI | GM</p>
+                <p class="footer-x-link">🔗 <a href="https://x.com/ZYER55" target="_blank">@ZYER55</a> | Follow me on X</p>
+            </div>
+            <div class="footer-links">
+                <p>🚀 坚持执行，持续迭代</p>
+                <p class="footer-motto">小步快跑，复利增长</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Built with ❤️ by ZYER | 定投 + 撸毛双轮驱动</p>
+        </div>
+    </footer>
+</body>
+</html>
